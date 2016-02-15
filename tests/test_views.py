@@ -128,9 +128,9 @@ class ObtainJSONWebTokenTests(BaseTestCase):
         """
         Ensure JWT login view works even if expired token is provided
         """
-        payload = utils.jwt_payload_handler(self.user)
+        payload, salt = utils.jwt_payload_handler(self.user)
         payload['exp'] = 1
-        token = utils.jwt_encode_handler(payload)
+        token = utils.jwt_encode_handler(payload, salt=salt)
 
         auth = 'JWT {0}'.format(token)
         client = APIClient(enforce_csrf_checks=True)
@@ -216,14 +216,14 @@ class TokenTestCase(BaseTestCase):
         return response.data['token']
 
     def create_token(self, user, exp=None, orig_iat=None):
-        payload = utils.jwt_payload_handler(user)
+        payload, salt = utils.jwt_payload_handler(user)
         if exp:
             payload['exp'] = exp
 
         if orig_iat:
             payload['orig_iat'] = timegm(orig_iat.utctimetuple())
 
-        token = utils.jwt_encode_handler(payload)
+        token = utils.jwt_encode_handler(payload, salt=salt)
         return token
 
 

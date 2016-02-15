@@ -3,8 +3,13 @@ import warnings
 from calendar import timegm
 from datetime import datetime
 
-from rest_framework_jwt.compat import get_username, get_username_field
+from rest_framework_jwt.compat import (get_username, get_username_field,
+                                       get_user_model)
 from rest_framework_jwt.settings import api_settings
+
+
+def get_salt_values_from_user(user):
+    return tuple(getattr(user, attr) for attr in api_settings.JWT_USER_SALT_FIELDS)
 
 
 def jwt_payload_handler(user):
@@ -39,7 +44,7 @@ def jwt_payload_handler(user):
     if api_settings.JWT_ISSUER is not None:
         payload['iss'] = api_settings.JWT_ISSUER
 
-    return payload
+    return payload, get_salt_values_from_user(user)
 
 
 def jwt_get_user_id_from_payload_handler(payload):
@@ -62,10 +67,10 @@ def jwt_get_username_from_payload_handler(payload):
     return payload.get('username')
 
 
-def jwt_encode_handler(payload):
+def jwt_encode_handler(payload, salt=()):
     return jwt.encode(
         payload,
-        api_settings.JWT_SECRET_KEY,
+        ''.join((api_settings.JWT_SECRET_KEY,) + salt),
         api_settings.JWT_ALGORITHM
     ).decode('utf-8')
 
@@ -74,10 +79,19 @@ def jwt_decode_handler(token):
     options = {
         'verify_exp': api_settings.JWT_VERIFY_EXPIRATION,
     }
+    unsafe_payload = jwt.decode(token, verify=False)
+    user_id = jwt_get_user_id_from_payload_handler(unsafe_payload)
+    User = get_user_model()
+    try:
+        user = User.objects.get(pk=user_id)
+    except User.DoesNotExist:
+        salt = ()
+    else:
+        salt = get_salt_values_from_user(user)
 
     return jwt.decode(
         token,
-        api_settings.JWT_SECRET_KEY,
+        ''.join((api_settings.JWT_SECRET_KEY,) + salt),
         api_settings.JWT_VERIFY,
         options=options,
         leeway=api_settings.JWT_LEEWAY,

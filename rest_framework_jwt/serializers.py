@@ -56,10 +56,10 @@ class JSONWebTokenSerializer(Serializer):
                     msg = _('User account is disabled.')
                     raise serializers.ValidationError(msg)
 
-                payload = jwt_payload_handler(user)
+                payload, salt = jwt_payload_handler(user)
 
                 return {
-                    'token': jwt_encode_handler(payload),
+                    'token': jwt_encode_handler(payload, salt=salt),
                     'user': user
                 }
             else:
@@ -164,10 +164,10 @@ class RefreshJSONWebTokenSerializer(VerificationBaseSerializer):
             msg = _('orig_iat field is required.')
             raise serializers.ValidationError(msg)
 
-        new_payload = jwt_payload_handler(user)
+        new_payload, salt = jwt_payload_handler(user)
         new_payload['orig_iat'] = orig_iat
 
         return {
-            'token': jwt_encode_handler(new_payload),
+            'token': jwt_encode_handler(new_payload, salt=()),
             'user': user
         }
