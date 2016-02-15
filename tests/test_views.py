@@ -221,7 +221,7 @@ class TokenTestCase(BaseTestCase):
             payload['exp'] = exp
 
         if orig_iat:
-            payload['orig_iat'] = timegm(orig_iat.utctimetuple())
+            payload['iat'] = timegm(orig_iat.utctimetuple())
 
         token = utils.jwt_encode_handler(payload, salt=salt)
         return token
@@ -319,7 +319,7 @@ class RefreshJSONWebTokenTests(TokenTestCase):
             expected_orig_iat = timegm(datetime.utcnow().utctimetuple())
 
             # Make sure 'orig_iat' exists and is the current time (give some slack)
-            orig_iat = orig_token_decoded['orig_iat']
+            orig_iat = orig_token_decoded['iat']
             self.assertLessEqual(orig_iat - expected_orig_iat, 1)
 
             with freeze_time('2015-01-01 00:00:03'):
@@ -333,7 +333,7 @@ class RefreshJSONWebTokenTests(TokenTestCase):
             new_token_decoded = utils.jwt_decode_handler(new_token)
 
         # Make sure 'orig_iat' on the new token is same as original
-        self.assertEquals(new_token_decoded['orig_iat'], orig_iat)
+        self.assertEquals(new_token_decoded['iat'], orig_iat)
         self.assertGreater(new_token_decoded['exp'], orig_token_decoded['exp'])
 
     def test_refresh_jwt_after_refresh_expiration(self):
