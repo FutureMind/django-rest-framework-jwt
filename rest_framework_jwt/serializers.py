@@ -168,6 +168,6 @@ class RefreshJSONWebTokenSerializer(VerificationBaseSerializer):
         new_payload['iat'] = orig_iat
 
         return {
-            'token': jwt_encode_handler(new_payload, salt=()),
+            'token': jwt_encode_handler(new_payload, salt=salt),
             'user': user
         }
